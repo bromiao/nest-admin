@@ -1,0 +1,110 @@
+# Use root/example as user/password credentials
+version: '3.3'
+
+services:
+  db:
+    image: mysql:8.0.34
+    # NOTE: use of "mysql_native_password" is not recommended: https://dev.mysql.com/doc/refman/8.0/en/upgrading-from-previous-series.html#upgrade-caching-sha2-password
+    # (this is just an example, not intended to be a production configuration)
+    # command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: vben-book-dev
+    ports:
+      - 3306:3306
+    volumes:
+      - ~/db_data/mysql_data:/var/lib/mysql
+
+  db1:
+    image: mysql:8.0.34
+    # NOTE: use of "mysql_native_password" is not recommended: https://dev.mysql.com/doc/refman/8.0/en/upgrading-from-previous-series.html#upgrade-caching-sha2-password
+    # (this is just an example, not intended to be a production configuration)
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: testdb
+      # MYSQL_USER MYSQL_PASSWORD
+    ports:
+      - 3307:3306
+    volumes:
+      - ~/db_data/mysql_data1:/var/lib/mysql
+
+  db2:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: example
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/db_data/pg_data:/var/lib/postgresql/data
+
+  # # navicat
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017
+    volumes:
+      - ~/db_data/mongo_data:/data/db
+      - ~/db_data/config_db:/data/configdb
+
+  mongo1:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27018:27017
+    volumes:
+      - ~/db_data/mongo_data1:/data/db
+      - ~/db_data/config_db1:/data/configdb
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+
+  mongo-express1:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo1:27017/
+      ME_CONFIG_BASICAUTH: false
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ~/nginx_data/conf.d:/etc/nginx/conf.d:ro
+      - ~/nginx_data/html:/usr/share/nginx/html:ro
+      - ~/nginx_data/logs:/var/log/nginx
+      - ~/nginx_data/ssl:/etc/nginx/ssl:ro
+    restart: always
