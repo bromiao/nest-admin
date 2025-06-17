@@ -10,12 +10,14 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { JWT_SECRET_KEY } from 'src/constants/auth.constants';
 import { Request } from 'express';
+import { ApiSecurity } from '@nestjs/swagger';
 
 /**
  * 认证守卫
  * 验证请求中的JWT令牌并提取用户信息
  */
 @Injectable()
+@ApiSecurity('JWT-auth')
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
 

@@ -6,6 +6,7 @@ import { getServerConfig } from './utils/common';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 /**
  * 获取HTTPS证书配置
@@ -18,11 +19,79 @@ const httpsOptions = {
 };
 
 /**
+ * 设置Swagger文档
+ * 仅在测试环境中启用
+ * @param app NestJS应用实例
+ * @param port 应用端口
+ */
+function setupSwagger(app, port) {
+  const logger = new Logger('Swagger');
+
+  // 配置Swagger文档
+  const config = new DocumentBuilder()
+    .setTitle('NestJS Admin API')
+    .setDescription('NestJS Admin API 文档 (仅测试环境可用)')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: '输入JWT token',
+        in: 'header',
+      },
+      'JWT-auth', // 这是一个标识，在装饰器中使用
+    )
+    .addTag('auth', '认证相关')
+    .addTag('user', '用户管理')
+    .addTag('book', '书籍管理')
+    .addTag('menu', '菜单管理')
+    .addTag('contents', '内容管理')
+    .addTag('role', '角色管理')
+    .addServer(`https://localhost:${port}/api`) // 添加服务器URL，包含api前缀
+    .build();
+
+  // 创建Swagger文档，并排除重复的模块
+  const document = SwaggerModule.createDocument(app, config, {
+    operationIdFactory: (controllerKey: string, methodKey: string) =>
+      `${controllerKey}_${methodKey}`,
+    ignoreGlobalPrefix: true, // 设置为true，忽略全局前缀
+    deepScanRoutes: true, // 深度扫描路由
+    extraModels: [], // 添加额外的模型
+  });
+
+  // 从文档中删除默认路由
+  if (document.paths['/']) {
+    delete document.paths['/'];
+  }
+
+  // 设置Swagger UI
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+      docExpansion: 'none',
+      defaultModelsExpandDepth: -1, // 隐藏默认的Models部分
+    },
+    customSiteTitle: 'NestJS Admin API 文档',
+    customCss: '.swagger-ui .topbar { display: none }', // 隐藏顶部栏
+  });
+
+  logger.log(
+    `Swagger documentation available at: https://localhost:${port}/api/docs`,
+  );
+}
+
+/**
  * 应用程序启动函数
  * 初始化NestJS应用并配置全局中间件
  */
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const isDevelopment = nodeEnv === 'development';
 
   try {
     // 创建带HTTPS的NestJS应用实例
@@ -32,8 +101,19 @@ async function bootstrap() {
       logger: ['error', 'warn', 'log', 'debug'], // 配置日志级别
     });
 
-    // 使用Helmet增强安全性
-    app.use(helmet());
+    // 使用Helmet增强安全性，但配置为允许Swagger UI工作
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: [`'self'`],
+            styleSrc: [`'self'`, `'unsafe-inline'`],
+            imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+            scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+          },
+        },
+      }),
+    );
 
     // 全局管道 - 用于请求验证
     app.useGlobalPipes(
@@ -44,6 +124,12 @@ async function bootstrap() {
         transformOptions: {
           enableImplicitConversion: true, // 启用隐式类型转换
         },
+        // 在开发环境下提供详细的错误信息
+        disableErrorMessages: !isDevelopment,
+        validationError: {
+          target: isDevelopment,
+          value: isDevelopment,
+        },
       }),
     );
 
@@ -51,15 +137,20 @@ async function bootstrap() {
     app.useGlobalFilters(new HttpExceptionFilter());
 
     // 设置全局路由前缀
-    // app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api');
 
-    // 获取配置的端口或使用默认端口3000
-    const port = Number(getServerConfig().APP_PORT ?? 3000);
+    // 获取配置的端口或使用默认端口3030
+    const port = Number(getServerConfig().APP_PORT ?? 3030);
+
+    // 仅在开发环境中启用Swagger
+    if (isDevelopment) {
+      setupSwagger(app, port);
+    }
 
     // 启动应用
     await app.listen(port);
     logger.log(`Application is running on: https://localhost:${port}`);
-    logger.log(`API documentation available at: https://localhost:${port}/api`);
+    logger.log(`Environment: ${nodeEnv}`);
   } catch (error) {
     logger.error(`Failed to start application: ${error.message}`, error.stack);
     process.exit(1);
