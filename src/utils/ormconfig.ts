@@ -1,46 +1,59 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigEnum } from '../enum/config.enum';
 import { getEnv } from './common';
+import { Logger } from '@nestjs/common';
 
-// 通过dotENV来解析不同的配置
+const logger = new Logger('DatabaseConfig');
+
+/**
+ * 构建TypeORM连接配置
+ * 根据环境变量配置数据库连接参数
+ * @returns TypeORM模块配置选项
+ */
 export function buildConnectionOptions(): TypeOrmModuleOptions {
+  // 加载配置文件
+  const nodeEnv = process.env.NODE_ENV || 'development';
   const defaultConfig = getEnv('.env');
-  const envConfig = getEnv(`.env.${process.env.NODE_ENV || 'development'}`);
-  // configService
+  const envConfig = getEnv(`.env.${nodeEnv}`);
   const config = { ...defaultConfig, ...envConfig };
 
+  // 是否启用日志
   const logFlag = config['LOG_ON'] === 'true';
 
-  // const entitiesDir =
-  //   process.env.NODE_ENV === 'test'
-  //     ? [__dirname + '/**/*.entity.ts']
-  //     : [__dirname + '/**/*.entity{.js,.ts}'];
-  const entitiesDir = ['../modules/**/*.entity{.js,.ts}'];
+  logger.log(`Database configuration loaded for ${nodeEnv} environment`);
 
-  console.log('Entities Directory:', entitiesDir);
-
-  return {
-    type: config[ConfigEnum.DB_TYPE],
-    host: config[ConfigEnum.DB_HOST],
-    port: config[ConfigEnum.DB_PORT],
-    username: config[ConfigEnum.DB_USERNAME],
-    password: config[ConfigEnum.DB_PASSWORD],
-    database: config[ConfigEnum.DB_DATABASE],
-    // entities: entitiesDir,
+  // 构建数据库连接配置
+  const options: TypeOrmModuleOptions = {
+    type: config[ConfigEnum.DB_TYPE] as any,
+    host: config[ConfigEnum.DB_HOST] as string,
+    port: Number(config[ConfigEnum.DB_PORT]),
+    username: config[ConfigEnum.DB_USERNAME] as string,
+    password: config[ConfigEnum.DB_PASSWORD] as string,
+    database: config[ConfigEnum.DB_DATABASE] as string,
     autoLoadEntities: true, // 自动加载实体
-    // 同步本地的schema与数据库 -> 初始化的时候去使用
-    // synchronize: true,
-    // 数据库相关日志，如数据库操作的sql语句等
-    logging: logFlag && process.env.NODE_ENV === 'development',
-    // logging: false,
-  } as TypeOrmModuleOptions;
+    synchronize: nodeEnv === 'development', // 仅在开发环境下同步数据库结构
+    logging: logFlag && nodeEnv === 'development',
+    // 添加连接池配置，提高性能
+    poolSize: 10,
+    connectTimeout: 20000,
+  };
+
+  return options;
 }
 
+// 导出连接参数
 export const connectionParams = buildConnectionOptions();
 
-// export default new DataSource({
-//   ...connectionParams,
-//   migrations: ['src/migrations/**'],
-//   subscribers: [],
-// } as DataSourceOptions);
+/**
+ * 用于迁移的数据源配置
+ * 取消注释以启用数据库迁移功能
+ */
+/*
+import { DataSource, DataSourceOptions } from 'typeorm';
+
+export default new DataSource({
+  ...connectionParams,
+  migrations: ['src/migrations/**'],
+  subscribers: [],
+} as DataSourceOptions);
+*/

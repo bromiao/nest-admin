@@ -36,7 +36,11 @@ export class EpubBook {
     const rootFile = await parseRootFile(tmpUnzipDir);
     console.log('rootFile', rootFile);
     // 4. epub content opf解析
-    const bookData = await parseContentOpf(tmpUnzipDir, rootFile, this.file.originalname);
+    const bookData = await parseContentOpf(
+      tmpUnzipDir,
+      rootFile,
+      this.file.originalname,
+    );
     // 5. 拷贝电子书封面图片到静态资源目录
     const cover = copyCoverImage(bookData, tmpDir);
     bookData.cover = cover;
