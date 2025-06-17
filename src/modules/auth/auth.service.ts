@@ -1,7 +1,8 @@
 import { UserService } from './../user/user.service';
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as md5 from 'md5';
+import { LoggerService } from '../logger/logger.service';
 
 /**
  * 认证服务
@@ -9,12 +10,13 @@ import * as md5 from 'md5';
  */
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-  ) {}
+    private readonly logger: LoggerService,
+  ) {
+    this.logger.setContext('AuthService');
+  }
 
   /**
    * 用户登录

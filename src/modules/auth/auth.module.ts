@@ -6,6 +6,7 @@ import { AuthGuard } from './auth.guard';
 import { UserModule } from '../user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JWT_SECRET_KEY } from 'src/constants/auth.constants';
+import { LoggerService } from '../logger/logger.service';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { JWT_SECRET_KEY } from 'src/constants/auth.constants';
   controllers: [AuthController],
   providers: [
     AuthService,
+    LoggerService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

@@ -7,6 +7,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { LoggerService } from './modules/logger/logger.service';
 
 /**
  * 获取HTTPS证书配置
@@ -23,10 +24,9 @@ const httpsOptions = {
  * 仅在测试环境中启用
  * @param app NestJS应用实例
  * @param port 应用端口
+ * @param logger 日志服务
  */
-function setupSwagger(app, port) {
-  const logger = new Logger('Swagger');
-
+function setupSwagger(app, port, logger) {
   // 配置Swagger文档
   const config = new DocumentBuilder()
     .setTitle('NestJS Admin API')
@@ -89,8 +89,10 @@ function setupSwagger(app, port) {
  * 初始化NestJS应用并配置全局中间件
  */
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+  // 创建一个标准的Logger用于启动过程
+  const bootstrapLogger = new Logger('Bootstrap');
   const nodeEnv = process.env.NODE_ENV || 'development';
+  const isTestEnv = nodeEnv === 'test';
   const isDevelopment = nodeEnv === 'development';
 
   try {
@@ -98,8 +100,14 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
       cors: true, // 启用CORS
       httpsOptions, // 配置HTTPS
-      logger: ['error', 'warn', 'log', 'debug'], // 配置日志级别
+      bufferLogs: true, // 缓冲日志，等待日志系统初始化
+      logger: ['error', 'warn', 'log', 'debug'], // 临时使用内置日志器
     });
+
+    // 使用Winston日志服务 - 使用resolve而不是get来处理作用域提供者
+    const logger = await app.resolve(LoggerService);
+    logger.setContext('Bootstrap');
+    app.useLogger(logger);
 
     // 使用Helmet增强安全性，但配置为允许Swagger UI工作
     app.use(
@@ -134,7 +142,9 @@ async function bootstrap() {
     );
 
     // 全局异常过滤器 - 统一处理HTTP异常
-    app.useGlobalFilters(new HttpExceptionFilter());
+    // 使用resolve而不是get来处理作用域提供者
+    const exceptionFilter = await app.resolve(HttpExceptionFilter);
+    app.useGlobalFilters(exceptionFilter);
 
     // 设置全局路由前缀
     app.setGlobalPrefix('api');
@@ -142,9 +152,9 @@ async function bootstrap() {
     // 获取配置的端口或使用默认端口3030
     const port = Number(getServerConfig().APP_PORT ?? 3030);
 
-    // 仅在开发环境中启用Swagger
-    if (isDevelopment) {
-      setupSwagger(app, port);
+    // 仅在测试环境中启用Swagger
+    if (isTestEnv) {
+      setupSwagger(app, port, logger);
     }
 
     // 启动应用
@@ -152,7 +162,10 @@ async function bootstrap() {
     logger.log(`Application is running on: https://localhost:${port}`);
     logger.log(`Environment: ${nodeEnv}`);
   } catch (error) {
-    logger.error(`Failed to start application: ${error.message}`, error.stack);
+    bootstrapLogger.error(
+      `Failed to start application: ${error.message}`,
+      error.stack,
+    );
     process.exit(1);
   }
 }

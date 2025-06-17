@@ -3,18 +3,37 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
+  Inject,
+  Optional,
   Logger,
+  Injectable,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { LoggerService } from '../../modules/logger/logger.service';
 
 /**
  * 全局HTTP异常过滤器
  * 捕获并处理所有HttpException类型的异常
  * 提供统一的响应格式和日志记录
  */
+@Injectable()
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
+  private readonly logger: LoggerService | Logger;
+
+  constructor(
+    @Optional()
+    @Inject(LoggerService)
+    private readonly loggerService?: LoggerService,
+  ) {
+    if (loggerService) {
+      this.logger = loggerService;
+      // 确保loggerService存在再调用setContext
+      loggerService.setContext(HttpExceptionFilter.name);
+    } else {
+      this.logger = new Logger(HttpExceptionFilter.name);
+    }
+  }
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
