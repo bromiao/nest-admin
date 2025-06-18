@@ -16,7 +16,8 @@ import { LoggerService } from './modules/logger/logger.service';
 import { LoggingInterceptor } from './modules/logger/logger.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LogLevel } from './modules/logger/logger.constants';
-import { getServerConfig } from './utils/common';
+import { CacheModule } from './modules/cache/cache.module';
+import { ConfigModule } from '@nestjs/config';
 
 /**
  * 应用程序主模块
@@ -24,6 +25,12 @@ import { getServerConfig } from './utils/common';
  */
 @Module({
   imports: [
+    // 配置模块
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+    }),
+    
     // 日志模块 - 使用自定义配置
     LoggerModule.forRoot({
       level: process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG,
@@ -36,8 +43,13 @@ import { getServerConfig } from './utils/common';
         colors: true,
       },
     }),
+    
+    // 缓存模块
+    CacheModule,
+    
     // 配置TypeORM数据库连接
     TypeOrmModule.forRoot(connectionParams),
+    
     // 功能模块
     UserModule,
     AuthModule,

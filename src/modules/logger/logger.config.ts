@@ -81,7 +81,7 @@ const consoleFormat = winston.format.combine(
     const coloredContext = chalk.hex('#FFA500').bold(`[${context}]`);
 
     // 处理消息中的对象
-    const message = info.message;
+    const message = chalk.cyan(info.message);
 
     // 如果有元数据，添加到输出中
     let metaOutput = '';
@@ -121,7 +121,7 @@ const consoleFormat = winston.format.combine(
       }
     }
 
-    return `${chalk.gray(info.timestamp)} ${info.level} ${coloredContext} ${message}${metaOutput}`;
+    return `${chalk.magenta(info.timestamp)} ${info.level} ${coloredContext} ${message}${metaOutput}`;
   }),
 );
 

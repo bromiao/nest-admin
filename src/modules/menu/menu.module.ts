@@ -3,10 +3,11 @@ import { MenuService } from './menu.service';
 import { MenuController } from './menu.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Menu } from './menu.entity';
+import { LoggerService } from '../logger/logger.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Menu])],
   controllers: [MenuController],
-  providers: [MenuService],
+  providers: [MenuService, LoggerService],
 })
 export class MenuModule {}
