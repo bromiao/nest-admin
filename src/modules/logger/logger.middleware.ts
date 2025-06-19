@@ -11,10 +11,10 @@ export class LoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const { method, originalUrl, ip } = req;
     const userAgent = req.get('user-agent') || '';
-    
+
     // 请求开始时间
     const startTime = Date.now();
-    
+
     // 记录请求信息
     this.logger.debug(`Request: ${method} ${originalUrl}`, undefined, {
       method,
@@ -28,7 +28,7 @@ export class LoggerMiddleware implements NestMiddleware {
       const { statusCode } = res;
       const contentLength = res.get('content-length') || 0;
       const responseTime = Date.now() - startTime;
-      
+
       // 使用新的logHttpRequest方法记录HTTP请求
       this.logger.logHttpRequest(
         method,

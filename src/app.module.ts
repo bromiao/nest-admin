@@ -30,10 +30,11 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
-    
+
     // 日志模块 - 使用自定义配置
     LoggerModule.forRoot({
-      level: process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG,
+      level:
+        process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG,
       console: true,
       file: true,
       format: {
@@ -43,13 +44,13 @@ import { ConfigModule } from '@nestjs/config';
         colors: true,
       },
     }),
-    
-    // 缓存模块
-    CacheModule,
-    
+
+    // 缓存模块 - 使用动态模块支持Redis开关
+    CacheModule.forRoot(),
+
     // 配置TypeORM数据库连接
     TypeOrmModule.forRoot(connectionParams),
-    
+
     // 功能模块
     UserModule,
     AuthModule,
@@ -60,7 +61,7 @@ import { ConfigModule } from '@nestjs/config';
   ],
   controllers: [AppController],
   providers: [
-    AppService, 
+    AppService,
     LoggerService,
     // 全局日志拦截器
     {

@@ -1,4 +1,8 @@
-import { Injectable, LoggerService as NestLoggerService, Scope } from '@nestjs/common';
+import {
+  Injectable,
+  LoggerService as NestLoggerService,
+  Scope,
+} from '@nestjs/common';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Inject } from '@nestjs/common';
@@ -45,11 +49,12 @@ export class LoggerService implements NestLoggerService {
    */
   log(message: any, context?: string, meta?: Record<string, any>) {
     // 如果消息是对象，则格式化它
-    const formattedMessage = typeof message === 'object' ? this.formatObject(message) : message;
-    
-    return this.logger.info(formattedMessage, { 
+    const formattedMessage =
+      typeof message === 'object' ? this.formatObject(message) : message;
+
+    return this.logger.info(formattedMessage, {
       context: context || this.context,
-      ...meta
+      ...meta,
     });
   }
 
@@ -60,13 +65,19 @@ export class LoggerService implements NestLoggerService {
    * @param context 上下文
    * @param meta 元数据
    */
-  error(message: any, trace?: string, context?: string, meta?: Record<string, any>) {
-    const formattedMessage = typeof message === 'object' ? this.formatObject(message) : message;
-    
-    return this.logger.error(formattedMessage, { 
+  error(
+    message: any,
+    trace?: string,
+    context?: string,
+    meta?: Record<string, any>,
+  ) {
+    const formattedMessage =
+      typeof message === 'object' ? this.formatObject(message) : message;
+
+    return this.logger.error(formattedMessage, {
       context: context || this.context,
       trace,
-      ...meta
+      ...meta,
     });
   }
 
@@ -77,11 +88,12 @@ export class LoggerService implements NestLoggerService {
    * @param meta 元数据
    */
   warn(message: any, context?: string, meta?: Record<string, any>) {
-    const formattedMessage = typeof message === 'object' ? this.formatObject(message) : message;
-    
-    return this.logger.warn(formattedMessage, { 
+    const formattedMessage =
+      typeof message === 'object' ? this.formatObject(message) : message;
+
+    return this.logger.warn(formattedMessage, {
       context: context || this.context,
-      ...meta
+      ...meta,
     });
   }
 
@@ -92,11 +104,12 @@ export class LoggerService implements NestLoggerService {
    * @param meta 元数据
    */
   debug(message: any, context?: string, meta?: Record<string, any>) {
-    const formattedMessage = typeof message === 'object' ? this.formatObject(message) : message;
-    
-    return this.logger.debug(formattedMessage, { 
+    const formattedMessage =
+      typeof message === 'object' ? this.formatObject(message) : message;
+
+    return this.logger.debug(formattedMessage, {
       context: context || this.context,
-      ...meta
+      ...meta,
     });
   }
 
@@ -107,11 +120,12 @@ export class LoggerService implements NestLoggerService {
    * @param meta 元数据
    */
   verbose(message: any, context?: string, meta?: Record<string, any>) {
-    const formattedMessage = typeof message === 'object' ? this.formatObject(message) : message;
-    
-    return this.logger.verbose(formattedMessage, { 
+    const formattedMessage =
+      typeof message === 'object' ? this.formatObject(message) : message;
+
+    return this.logger.verbose(formattedMessage, {
       context: context || this.context,
-      ...meta
+      ...meta,
     });
   }
 
@@ -123,14 +137,25 @@ export class LoggerService implements NestLoggerService {
    */
   logWithMeta(level: LogLevel, message: string, meta: Record<string, any>) {
     // 确保元数据中的对象被格式化为字符串
-    const formattedMeta = Object.entries(meta).reduce((acc, [key, value]) => {
-      acc[key] = typeof value === 'object' && value !== null ? this.formatObject(value) : value;
-      return acc;
-    }, {} as Record<string, any>);
-    
+    const formattedMeta = Object.entries(meta).reduce(
+      (acc, [key, value]) => {
+        acc[key] =
+          typeof value === 'object' && value !== null
+            ? this.formatObject(value)
+            : value;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
+
     switch (level) {
       case LogLevel.ERROR:
-        return this.error(message, formattedMeta.trace, undefined, formattedMeta);
+        return this.error(
+          message,
+          formattedMeta.trace,
+          undefined,
+          formattedMeta,
+        );
       case LogLevel.WARN:
         return this.warn(message, undefined, formattedMeta);
       case LogLevel.DEBUG:

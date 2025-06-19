@@ -15,7 +15,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { BookService } from './book.service';
-import { wrapperCountResponse, wrapperResponse } from 'src/utils';
+import { CacheService } from '../cache/cache.service';
+import { wrapperResponse } from 'src/utils';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -34,7 +35,10 @@ import {
 @ApiBearerAuth('JWT-auth')
 @Controller('book')
 export class BookController {
-  constructor(private readonly bookService: BookService) {}
+  constructor(
+    private readonly bookService: BookService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -55,17 +59,53 @@ export class BookController {
   })
   @ApiResponse({ status: 200, description: '获取电子书列表成功' })
   @ApiResponse({ status: 401, description: '未授权' })
-  getBookList(@Query() params, @Request() request) {
+  async getBookList(@Query() params, @Request() request) {
     const user = request.user;
     if (!user || !user.userid) {
       throw new UnauthorizedException('用户信息无效');
     }
     const { userid } = user;
-    return wrapperCountResponse(
-      this.bookService.getBookList(params, userid),
-      this.bookService.countBookList(params, userid),
-      '获取电子书列表成功！',
-    );
+
+    const cacheKey = `books:list:${userid}:${JSON.stringify(params)}`;
+
+    try {
+      // 尝试从缓存获取
+      const cachedBooks = await this.cacheService.get<{
+        data: any[];
+        count: number;
+      }>(cacheKey);
+      if (cachedBooks) {
+        return {
+          code: 0,
+          data: cachedBooks.data,
+          count: cachedBooks.count,
+          message: '获取电子书列表成功！（缓存）',
+        };
+      }
+
+      // 从数据库获取并缓存
+      const [books, count] = await Promise.all([
+        this.bookService.getBookList(params, userid),
+        this.bookService.countBookList(params, userid),
+      ]);
+
+      const result = { data: books, count };
+      await this.cacheService.set(cacheKey, result, 300); // 缓存5分钟
+
+      return {
+        code: 0,
+        data: books,
+        count,
+        message: '获取电子书列表成功！',
+      };
+    } catch (error) {
+      return {
+        code: -1,
+        data: null,
+        count: 0,
+        message: error.message || '获取电子书列表失败',
+      };
+    }
   }
 
   @Get(':id')
@@ -76,8 +116,44 @@ export class BookController {
   @ApiParam({ name: 'id', description: '电子书ID', type: Number })
   @ApiResponse({ status: 200, description: '查询电子书成功' })
   @ApiResponse({ status: 404, description: '电子书不存在' })
-  getBook(@Param('id', ParseIntPipe) id) {
-    return wrapperResponse(this.bookService.getBook(id), '查询电子书成功！');
+  async getBook(@Param('id', ParseIntPipe) id) {
+    const cacheKey = `book:${id}`;
+
+    try {
+      // 尝试从缓存获取
+      const cachedBook = await this.cacheService.get(cacheKey);
+      if (cachedBook) {
+        return {
+          code: 0,
+          data: cachedBook,
+          message: '查询电子书成功！（缓存）',
+        };
+      }
+
+      // 从数据库获取并缓存
+      const book = await this.bookService.getBook(id);
+      if (!book) {
+        return {
+          code: -1,
+          data: null,
+          message: '电子书不存在',
+        };
+      }
+
+      await this.cacheService.set(cacheKey, book, 600); // 缓存10分钟
+
+      return {
+        code: 0,
+        data: book,
+        message: '查询电子书成功！',
+      };
+    } catch (error) {
+      return {
+        code: -1,
+        data: null,
+        message: error.message || '查询电子书失败',
+      };
+    }
   }
 
   @Post()
@@ -136,7 +212,7 @@ export class BookController {
 
   @Delete()
   @ApiOperation({ summary: '删除电子书', description: '删除电子书' })
-  @ApiBody({ 
+  @ApiBody({
     schema: {
       type: 'object',
       properties: {

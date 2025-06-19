@@ -8,7 +8,11 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { LoggerService } from './logger.service';
 import { Reflector } from '@nestjs/core';
-import { LOG_LEVEL_KEY, SKIP_LOG_KEY, LOG_CONTEXT_KEY } from './logger.decorator';
+import {
+  LOG_LEVEL_KEY,
+  SKIP_LOG_KEY,
+  LOG_CONTEXT_KEY,
+} from './logger.decorator';
 import { LogLevel } from './logger.constants';
 
 @Injectable()
@@ -30,10 +34,10 @@ export class LoggingInterceptor implements NestInterceptor {
     }
 
     // 获取日志上下文
-    const logContext = this.reflector.getAllAndOverride<string>(LOG_CONTEXT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const logContext = this.reflector.getAllAndOverride<string>(
+      LOG_CONTEXT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (logContext) {
       this.logger.setContext(logContext);
@@ -44,15 +48,16 @@ export class LoggingInterceptor implements NestInterceptor {
     }
 
     // 获取日志级别
-    const logLevel = this.reflector.getAllAndOverride<string>(LOG_LEVEL_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]) as LogLevel || LogLevel.INFO;
+    const logLevel =
+      (this.reflector.getAllAndOverride<string>(LOG_LEVEL_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) as LogLevel) || LogLevel.INFO;
 
     if (context.getType() === 'http') {
       const request = context.switchToHttp().getRequest();
       const { method, url, body, params, query } = request;
-      
+
       // 记录请求信息
       this.logger.logWithMeta(LogLevel.DEBUG, `Request: ${method} ${url}`, {
         method,
@@ -68,27 +73,31 @@ export class LoggingInterceptor implements NestInterceptor {
       tap({
         next: (data) => {
           const responseTime = Date.now() - now;
-          
+
           // 始终记录完整的响应数据，无论日志级别如何
-          this.logger.logWithMeta(logLevel, `Response data (${responseTime}ms):`, {
-            responseTime,
-            data: JSON.stringify(data, null, 2), // 格式化JSON以便更好地阅读
-          });
-          
+          this.logger.logWithMeta(
+            logLevel,
+            `Response data (${responseTime}ms):`,
+            {
+              responseTime,
+              data: JSON.stringify(data, null, 2), // 格式化JSON以便更好地阅读
+            },
+          );
+
           // 记录响应时间
           this.logger.debug(`Response: ${responseTime}ms`);
         },
         error: (err) => {
           const responseTime = Date.now() - now;
           this.logger.error(
-            `Error: ${responseTime}ms - ${err.message}`, 
+            `Error: ${responseTime}ms - ${err.message}`,
             err.stack,
             undefined,
             {
               responseTime,
               error: err.name,
               message: err.message,
-            }
+            },
           );
         },
       }),

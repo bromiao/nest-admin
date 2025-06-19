@@ -4,9 +4,7 @@ import { createLoggerConfig, loggerConfig } from './logger.config';
 import { LoggerOptions } from './logger.constants';
 
 @Module({
-  imports: [
-    WinstonModule.forRoot(loggerConfig),
-  ],
+  imports: [WinstonModule.forRoot(loggerConfig)],
   exports: [WinstonModule],
 })
 export class LoggerModule {
@@ -18,9 +16,7 @@ export class LoggerModule {
   static forRoot(options?: Partial<LoggerOptions>): DynamicModule {
     return {
       module: LoggerModule,
-      imports: [
-        WinstonModule.forRoot(createLoggerConfig(options)),
-      ],
+      imports: [WinstonModule.forRoot(createLoggerConfig(options))],
       exports: [WinstonModule],
     };
   }

@@ -25,7 +25,7 @@ export class MenuService {
    * 获取所有菜单
    * @returns 菜单列表
    */
-  @Cacheable('menu:findAll', 60 * 60 * 1000) // 缓存1小时
+  @Cacheable({ key: 'menu:findAll', ttl: 3600 }) // 缓存1小时
   async findAll() {
     this.logger.debug('从数据库查询所有菜单');
     const QUERY_ALL_SQL = 'SELECT * FROM menu ORDER BY id DESC';
@@ -40,7 +40,7 @@ export class MenuService {
     try {
       // 生成缓存键
       const cacheKey = `${this.CACHE_PREFIX}:findActive`;
-      
+
       // 尝试从缓存获取
       return await this.cacheService.getOrSet(
         cacheKey,
@@ -50,7 +50,7 @@ export class MenuService {
             'SELECT * FROM menu WHERE active = 1 ORDER BY id DESC';
           return this.menuRepository.query(QUERY_ALL_SQL);
         },
-        this.CACHE_TTL
+        this.CACHE_TTL,
       );
     } catch (error) {
       this.logger.error(`查询激活菜单失败: ${error.message}`, error.stack);
@@ -66,10 +66,10 @@ export class MenuService {
   async create(body) {
     try {
       const result = await this.menuRepository.save(body);
-      
+
       // 清除菜单缓存
       await this.clearMenuCache();
-      
+
       return result;
     } catch (error) {
       this.logger.error(`创建菜单失败: ${error.message}`, error.stack);
@@ -86,19 +86,60 @@ export class MenuService {
     try {
       const id = body.data?.id || body.id;
       const data = body.data || body;
-      
+
       const result = await this.menuRepository.update(id, data);
-      
+
       // 清除菜单缓存
       await this.clearMenuCache();
-      
+
       return result;
     } catch (error) {
       this.logger.error(`更新菜单失败: ${error.message}`, error.stack);
       throw error;
     }
   }
-  
+
+  /**
+   * 根据ID查找菜单
+   * @param id 菜单ID
+   * @returns 菜单信息
+   */
+  async findById(id: number) {
+    try {
+      const QUERY_BY_ID_SQL = 'SELECT * FROM menu WHERE id = ?';
+      const result = await this.menuRepository.query(QUERY_BY_ID_SQL, [id]);
+      this.logger.debug(`根据ID查询菜单: ${id}`, undefined, { result });
+      return result[0] || null;
+    } catch (error) {
+      this.logger.error(
+        `根据ID查询菜单失败 [${id}]: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * 根据ID删除菜单
+   * @param id 菜单ID
+   * @returns 删除结果
+   */
+  async deleteById(id: number) {
+    try {
+      const DELETE_SQL = 'DELETE FROM menu WHERE id = ?';
+      const result = await this.menuRepository.query(DELETE_SQL, [id]);
+      this.logger.debug(`删除菜单: ${id}`, undefined, { result });
+
+      // 清除缓存
+      await this.clearMenuCache();
+
+      return result;
+    } catch (error) {
+      this.logger.error(`删除菜单失败 [${id}]: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   /**
    * 清除菜单相关的缓存
    */

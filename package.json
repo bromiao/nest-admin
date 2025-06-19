@@ -17,9 +17,12 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "quality": "bash scripts/code-quality.sh",
+    "pre-commit": "pnpm run format && pnpm run lint && pnpm run build"
   },
   "dependencies": {
+    "@nestjs-modules/ioredis": "^2.0.2",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
@@ -37,9 +40,11 @@
     "dotenv": "^16.5.0",
     "fs-extra": "^11.3.0",
     "helmet": "^7.2.0",
+    "ioredis": "^5.6.1",
     "md5": "^2.3.0",
     "mysql2": "^3.14.1",
     "nest-winston": "^1.10.2",
+    "redis": "^5.5.6",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",

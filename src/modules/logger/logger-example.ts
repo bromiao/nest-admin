@@ -37,7 +37,7 @@ export class LoggerExample {
   logWithMetadata() {
     const user = { id: 1, username: 'admin' };
     const action = 'login';
-    
+
     this.logger.log(`用户 ${user.username} 执行了 ${action} 操作`);
   }
 }

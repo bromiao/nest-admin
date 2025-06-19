@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseFilters, Inject } from '@nestjs/common';
+import { Body, Controller, Post, UseFilters } from '@nestjs/common';
 import { Public } from './public.decorator';
 import { AuthService } from './auth.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';

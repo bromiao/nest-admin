@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { RoleService } from './role.service';
+import { CacheService } from '../cache/cache.service';
 import { wrapperResponse } from 'src/utils';
 import {
   ApiTags,
@@ -25,7 +26,10 @@ import {
 @ApiBearerAuth('JWT-auth')
 @Controller('role')
 export class RoleController {
-  constructor(private readonly roleService: RoleService) {}
+  constructor(
+    private readonly roleService: RoleService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   @Delete('role_menu')
   @ApiOperation({
@@ -95,11 +99,36 @@ export class RoleController {
     description: '获取所有权限列表，支持筛选',
   })
   @ApiResponse({ status: 200, description: '获取权限列表数据成功' })
-  getAuthList(@Query() query) {
-    return wrapperResponse(
-      this.roleService.getAuthList(query),
-      '获取权限列表数据成功',
-    );
+  async getAuthList(@Query() query) {
+    const cacheKey = `roles:auth:${JSON.stringify(query)}`;
+
+    try {
+      // 尝试从缓存获取
+      const cachedAuth = await this.cacheService.get(cacheKey);
+      if (cachedAuth) {
+        return {
+          code: 0,
+          data: cachedAuth,
+          message: '获取权限列表数据成功（缓存）',
+        };
+      }
+
+      // 从数据库获取并缓存
+      const authList = await this.roleService.getAuthList(query);
+      await this.cacheService.set(cacheKey, authList, 600); // 缓存10分钟
+
+      return {
+        code: 0,
+        data: authList,
+        message: '获取权限列表数据成功',
+      };
+    } catch (error) {
+      return {
+        code: -1,
+        data: null,
+        message: error.message || '获取权限列表失败',
+      };
+    }
   }
 
   @Post('auth')
@@ -130,8 +159,36 @@ export class RoleController {
     description: '获取所有角色列表，支持筛选',
   })
   @ApiResponse({ status: 200, description: '获取角色列表成功' })
-  getAllRole(@Query() query) {
-    return wrapperResponse(this.roleService.findAll(query), '获取角色列表成功');
+  async getAllRole(@Query() query) {
+    const cacheKey = `roles:all:${JSON.stringify(query)}`;
+
+    try {
+      // 尝试从缓存获取
+      const cachedRoles = await this.cacheService.get(cacheKey);
+      if (cachedRoles) {
+        return {
+          code: 0,
+          data: cachedRoles,
+          message: '获取角色列表成功（缓存）',
+        };
+      }
+
+      // 从数据库获取并缓存
+      const roles = await this.roleService.findAll(query);
+      await this.cacheService.set(cacheKey, roles, 300); // 缓存5分钟
+
+      return {
+        code: 0,
+        data: roles,
+        message: '获取角色列表成功',
+      };
+    } catch (error) {
+      return {
+        code: -1,
+        data: null,
+        message: error.message || '获取角色列表失败',
+      };
+    }
   }
 
   @Post()

@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ContentsService } from './contents.service';
 import { wrapperCountResponse, wrapperResponse } from 'src/utils';
 import {
@@ -63,7 +56,7 @@ export class ContentsController {
 
   @Delete()
   @ApiOperation({ summary: '删除目录', description: '删除电子书目录' })
-  @ApiBody({ 
+  @ApiBody({
     schema: {
       type: 'object',
       properties: {

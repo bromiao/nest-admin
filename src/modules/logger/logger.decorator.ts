@@ -33,4 +33,5 @@ export const LOG_CONTEXT_KEY = 'log_context';
  * @param context 上下文名称
  * @returns 装饰器
  */
-export const LogContext = (context: string) => SetMetadata(LOG_CONTEXT_KEY, context);
+export const LogContext = (context: string) =>
+  SetMetadata(LOG_CONTEXT_KEY, context);
