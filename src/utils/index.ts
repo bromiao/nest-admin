@@ -52,7 +52,7 @@ export class ErrorResponse {
 export function successCount(data, count, msg) {
   return {
     code: 0,
-    result: data,
+    data: data,
     message: msg,
     count,
   };
@@ -67,7 +67,7 @@ export function successCount(data, count, msg) {
 export function success(data, msg) {
   return {
     code: 0,
-    result: data,
+    data,
     message: msg,
   };
 }
@@ -100,16 +100,15 @@ export function wrapperResponse(p, msg) {
 /**
  * 包装带计数的Promise响应
  * @param dataPromise 数据Promise
- * @param countPromise 计数Promise
+ * @param countPromise 计数Promise (现在直接返回数字)
  * @param msg 成功消息
  * @returns 包装后的Promise
  */
 export function wrapperCountResponse(dataPromise, countPromise, msg) {
   return Promise.all([dataPromise, countPromise])
     .then((res) => {
-      const [data, countArr] = res;
-      const [count] = countArr;
-      return successCount(data, count.count, msg);
+      const [data, count] = res;
+      return successCount(data, count, msg);
     })
     .catch((err) => error(err.message));
 }

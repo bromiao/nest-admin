@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Contents } from './contents.entity';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 
 @Injectable()
 export class ContentsService {
@@ -30,17 +30,32 @@ export class ContentsService {
     const QUERY_BOOK_LIST_SQL = `SELECT * FROM contents ${where} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`;
     return this.contentsRepository.query(QUERY_BOOK_LIST_SQL);
   }
-  countContentsList(params: any = {}) {
+  /**
+   * 获取内容列表数量
+   * 使用Repository.count()方法，直接返回数字
+   */
+  async countContentsList(params: any = {}): Promise<number> {
     const { title = '', author = '' } = params;
-    let where = 'WHERE 1=1';
+
+    // 构建查询条件对象
+    const whereConditions: any = {};
+
+    // 添加标题筛选
     if (title) {
-      where += ` AND title LIKE '%${title}%'`;
+      whereConditions.title = Like(`%${title}%`);
     }
+
+    // 添加作者筛选
     if (author) {
-      where += ` AND author LIKE '%${author}%'`;
+      whereConditions.author = Like(`%${author}%`);
     }
-    const QUERY_BOOK_LIST_SQL = `SELECT count(*) AS count FROM contents ${where}`;
-    return this.contentsRepository.query(QUERY_BOOK_LIST_SQL);
+
+    // 根据是否有查询条件决定查询方式
+    if (Object.keys(whereConditions).length > 0) {
+      return await this.contentsRepository.count({ where: whereConditions });
+    } else {
+      return await this.contentsRepository.count(); // 不传where参数
+    }
   }
 
   addContents(params) {

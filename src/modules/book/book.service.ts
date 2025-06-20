@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from './book.entity';
-import { Repository } from 'typeorm';
+import { Repository, Like, In } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { EpubBook } from './epub-book';
@@ -36,8 +36,19 @@ export class BookService {
      `;
     const authList = await this.bookRepository.query(AUTH_SQL);
     let categoryAuth = authList.filter((auth) => AUTH_LIST.includes(auth.key));
-    categoryAuth = categoryAuth.map((category) => `'${category.key}'`);
+
+    // 对于Repository方法，返回不带引号的字符串数组
+    categoryAuth = categoryAuth.map((category) => category.key);
     return categoryAuth;
+  }
+
+  /**
+   * 获取用户权限分类（用于原生SQL）
+   * 返回带引号的字符串数组，用于SQL IN子句
+   */
+  async getCategoryAuthForSQL(userid) {
+    const categoryAuth = await this.getCategoryAuth(userid);
+    return categoryAuth.map((category) => `'${category}'`);
   }
 
   async getBookList(params: any = {}, userid) {
@@ -57,28 +68,45 @@ export class BookService {
     if (author) {
       where += ` AND author LIKE '%${author}%'`;
     }
-    const categoryAuth = await this.getCategoryAuth(userid);
+    const categoryAuth = await this.getCategoryAuthForSQL(userid);
     if (categoryAuth.length > 0) {
       where += ` AND categoryText IN (${categoryAuth.join(',')})`;
     }
     const QUERY_BOOK_LIST_SQL = `SELECT * FROM book ${where} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`;
     return this.bookRepository.query(QUERY_BOOK_LIST_SQL);
   }
-  async countBookList(params: any = {}, userid) {
+  /**
+   * 获取图书列表数量
+   * 使用Repository.count()方法，直接返回数字
+   */
+  async countBookList(params: any = {}, userid): Promise<number> {
     const { title = '', author = '' } = params;
-    let where = 'WHERE 1=1';
+
+    // 构建查询条件对象
+    const whereConditions: any = {};
+
+    // 添加标题筛选
     if (title) {
-      where += ` AND title LIKE '%${title}%'`;
+      whereConditions.title = Like(`%${title}%`);
     }
+
+    // 添加作者筛选
     if (author) {
-      where += ` AND author LIKE '%${author}%'`;
+      whereConditions.author = Like(`%${author}%`);
     }
+
+    // 获取用户权限分类
     const categoryAuth = await this.getCategoryAuth(userid);
     if (categoryAuth.length > 0) {
-      where += ` AND categoryText IN (${categoryAuth.join(',')})`;
+      whereConditions.categoryText = In(categoryAuth);
     }
-    const QUERY_BOOK_LIST_SQL = `SELECT count(*) AS count FROM book ${where}`;
-    return this.bookRepository.query(QUERY_BOOK_LIST_SQL);
+
+    // 根据是否有查询条件决定查询方式
+    if (Object.keys(whereConditions).length > 0) {
+      return await this.bookRepository.count({ where: whereConditions });
+    } else {
+      return await this.bookRepository.count(); // 不传where参数
+    }
   }
 
   addBook(params) {

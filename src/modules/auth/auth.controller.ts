@@ -53,7 +53,7 @@ export class AuthController {
 
       const response = {
         code: 0,
-        result,
+        data: result,
         message: '登录成功',
       };
 

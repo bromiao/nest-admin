@@ -1,4 +1,32 @@
 {
-  "bitoAI.codeCompletion.enableAutoCompletion": false,
-  "Codegeex.RepoIndex": true
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "debug.console.fontSize": 14,
+  "debug.console.lineHeight": 22,
+  "debug.internalConsoleOptions": "openOnSessionStart",
+  "debug.terminal.clearBeforeReusing": true,
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true
+  },
+  "typescript.preferences.importModuleSpecifier": "relative"
 }

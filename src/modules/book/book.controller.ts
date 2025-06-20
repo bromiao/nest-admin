@@ -108,6 +108,14 @@ export class BookController {
     }
   }
 
+  @Get('count')
+  getBookCount(@Query() params, @Request() request) {
+    return wrapperResponse(
+      this.bookService.countBookList(params, request.user.userid),
+      '获取电子书总数成功！',
+    );
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: '根据ID获取电子书',
