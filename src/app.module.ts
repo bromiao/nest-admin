@@ -6,7 +6,7 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BookModule } from './modules/book/book.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { connectionParams } from './utils/ormconfig';
+import { connectionParams } from './config/migration.config'; // 引入数据库连接配置
 import { MenuModule } from './modules/menu/menu.module';
 import { ContentsModule } from './modules/contents/contents.module';
 import { RoleModule } from './modules/role/role.module';
