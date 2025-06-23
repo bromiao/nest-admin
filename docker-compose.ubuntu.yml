@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  ubuntu:
+    # 使用Ubuntu镜像
+    # image: ubuntu:22.04
+    
+    # 使用自定义镜像
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu
+    
+    # 容器名称
+    container_name: ubuntu
+    
+    # 后台运行，保持容器存活
+    command: sleep infinity
+    # 或者使用: tail -f /dev/null
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 环境变量
+    environment:
+      - TZ=Asia/Shanghai
+      - LANG=C.UTF-8
+      - DEBIAN_FRONTEND=noninteractive
+    
+    # 数据卷挂载（数据持久化）
+    volumes:
+      # 命名数据卷挂载到容器的/data目录
+      - ~/docker_data/ubuntu_data:/data
+      
+      # 主机目录挂载到容器的/workspace目录
+      # - ./workspace:/workspace
+      
+      # 主机home目录挂载（可选）
+      - ~:/home/data
+      
+      # 系统时间同步
+      - /etc/localtime:/etc/localtime:ro
+    
+    # 工作目录
+    # working_dir: /workspace
+    
+    # 保持标准输入打开
+    stdin_open: true
+    
+    # 分配伪终端
+    tty: true
+
+    # 禁用IPv6的系统参数
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
+      - net.ipv6.conf.lo.disable_ipv6=1

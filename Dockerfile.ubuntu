@@ -1,0 +1,65 @@
+FROM ubuntu:22.04
+
+# 避免交互式安装
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+
+# 备份原始软件源并更换为国内镜像源
+RUN cp /etc/apt/sources.list /etc/apt/sources.list.backup && \
+    echo 'deb http://mirrors.aliyun.com/ubuntu-ports/ jammy main restricted universe multiverse' > /etc/apt/sources.list && \
+    echo 'deb http://mirrors.aliyun.com/ubuntu-ports/ jammy-updates main restricted universe multiverse' >> /etc/apt/sources.list && \
+    echo 'deb http://mirrors.aliyun.com/ubuntu-ports/ jammy-backports main restricted universe multiverse' >> /etc/apt/sources.list && \
+    echo 'deb http://mirrors.aliyun.com/ubuntu-ports/ jammy-security main restricted universe multiverse' >> /etc/apt/sources.list
+
+# 配置apt，强制IPv4，增加重试和超时设置
+RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 && \
+    echo 'Acquire::Retries "5";' >> /etc/apt/apt.conf.d/99force-ipv4 && \
+    echo 'Acquire::http::Timeout "120";' >> /etc/apt/apt.conf.d/99force-ipv4 && \
+    echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/99force-ipv4 && \
+    echo 'APT::Install-Suggests "false";' >> /etc/apt/apt.conf.d/99force-ipv4
+
+# 更新软件包列表，添加重试机制
+RUN apt update || (sleep 10 && apt update) || (sleep 20 && apt update)
+
+# 分步安装基础工具，使用--fix-missing和重试机制
+RUN apt install -y --fix-missing curl wget ca-certificates || \
+    (apt update && apt install -y --fix-missing curl wget ca-certificates)
+
+RUN apt install -y --fix-missing git vim nano || \
+    (apt update && apt install -y --fix-missing git vim nano)
+
+RUN apt install -y --fix-missing htop || \
+    (apt update && apt install -y --fix-missing htop)
+
+# 安装编译工具，分开安装减少失败风险
+RUN apt install -y --fix-missing gcc g++ || \
+    (apt update && apt install -y --fix-missing gcc g++)
+
+RUN apt install -y --fix-missing make build-essential || \
+    (apt update && apt install -y --fix-missing make) || \
+    echo "build-essential installation failed, but continuing..."
+
+# 清理apt缓存
+RUN apt clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# 安装 Node.js 22.11.0，增加下载重试
+RUN cd /tmp && \
+    (wget --timeout=120 --tries=3 https://nodejs.org/dist/v22.11.0/node-v22.11.0-linux-arm64.tar.xz || \
+     wget --timeout=120 --tries=3 https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-arm64.tar.xz || \
+     curl -L --max-time 120 --retry 3 -o node-v22.11.0-linux-arm64.tar.xz https://nodejs.org/dist/v22.11.0/node-v22.11.0-linux-arm64.tar.xz) && \
+    tar -xJf node-v22.11.0-linux-arm64.tar.xz && \
+    cp -r node-v22.11.0-linux-arm64/* /usr/local/ && \
+    ln -sf /usr/local/bin/node /usr/bin/node && \
+    ln -sf /usr/local/bin/npm /usr/bin/npm && \
+    ln -sf /usr/local/bin/npx /usr/bin/npx && \
+    rm -rf /tmp/node-v22.11.0-linux-arm64* && \
+    node --version && npm --version
+
+# 配置npm镜像源
+# RUN npm config set registry https://registry.npmmirror.com
+
+# 创建工作目录
+# WORKDIR /workspace
+
+# 保持容器运行
+CMD ["sleep", "infinity"]
