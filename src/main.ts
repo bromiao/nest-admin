@@ -100,11 +100,11 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
       cors: true, // 启用CORS
       httpsOptions, // 配置HTTPS
-      bufferLogs: true, // 缓冲日志，等待日志系统初始化
-      logger: ['error', 'warn', 'log', 'debug'], // 临时使用内置日志器
+      bufferLogs: false, // 禁用日志缓冲，立即输出
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'], // 使用内置日志器，包含所有级别
     });
 
-    // 使用Winston日志服务 - 使用resolve而不是get来处理作用域提供者
+    // 临时注释掉Winston日志服务，使用默认的console输出
     const logger = await app.resolve(LoggerService);
     logger.setContext('Bootstrap');
     app.useLogger(logger);
@@ -154,13 +154,13 @@ async function bootstrap() {
 
     // 仅在测试环境中启用Swagger
     if (isTestEnv) {
-      setupSwagger(app, port, logger);
+      setupSwagger(app, port, bootstrapLogger);
     }
 
     // 启动应用
     await app.listen(port);
-    logger.log(`Application is running on: https://localhost:${port}`);
-    logger.log(`Environment: ${nodeEnv}`);
+    bootstrapLogger.log(`Application is running on: https://localhost:${port}`);
+    bootstrapLogger.log(`Environment: ${nodeEnv}`);
   } catch (error) {
     bootstrapLogger.error(
       `Failed to start application: ${error.message}`,

@@ -3,7 +3,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
 import { CacheController } from './cache.controller';
-import { LoggerService } from '../logger/logger.service';
+import { LoggerModule } from '../logger/logger.module';
 import { getRedisConfig, isRedisEnabled } from '../../config/redis.config';
 
 /**
@@ -15,7 +15,7 @@ import { getRedisConfig, isRedisEnabled } from '../../config/redis.config';
 @Module({})
 export class CacheModule {
   static forRoot(): DynamicModule {
-    const dynamicImports: any[] = [];
+    const dynamicImports: any[] = [LoggerModule];
 
     // 总是导入RedisModule，但在useFactory中判断是否启用
     dynamicImports.push(
@@ -75,7 +75,6 @@ export class CacheModule {
       controllers: [CacheController],
       providers: [
         CacheService,
-        LoggerService,
         // 提供Redis启用状态
         {
           provide: 'REDIS_ENABLED',

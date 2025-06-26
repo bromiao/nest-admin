@@ -1,4 +1,3 @@
-import { UserService } from './../user/user.service';
 import { UserAdapterService } from '../user/user-adapter.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -12,7 +11,6 @@ import { LoggerService } from '../logger/logger.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
     private userAdapterService: UserAdapterService,
     private jwtService: JwtService,
     private readonly logger: LoggerService,
@@ -24,37 +22,36 @@ export class AuthService {
    * 用户登录
    * @param username 用户名
    * @param password 密码
-   * @returns 包含JWT令牌的对象
+   * @returns JWT令牌和用户信息
    */
   async login(username: string, password: string) {
     try {
-      // 使用适配器查找用户
+      // 查找用户
       const user = await this.userAdapterService.findByUsername(username);
 
       if (!user) {
         this.logger.warn(`User not found: ${username}`);
-        throw new UnauthorizedException('Invalid username or password');
+        throw new UnauthorizedException('用户名或密码错误');
       }
 
-      // 密码加密比对
+      // 验证密码
       const md5Pwd = md5(password).toUpperCase();
 
       this.logger.debug(`Attempting login for user: ${username}`);
 
-      // 验证密码
       if (user.password !== md5Pwd) {
         this.logger.warn(`Invalid password attempt for user: ${username}`);
-        throw new UnauthorizedException('Invalid username or password');
+        throw new UnauthorizedException('用户名或密码错误');
       }
 
-      // 生成JWT载荷
+      // 生成JWT令牌
       const payload = {
+        sub: user.id,
         username: user.username,
-        id: user.id,
         role: user.role,
+        nickname: user.nickname,
       };
 
-      // 签发令牌
       const token = await this.jwtService.signAsync(payload);
 
       this.logger.log(`User ${username} logged in successfully`);
@@ -64,8 +61,8 @@ export class AuthService {
         user: {
           id: user.id,
           username: user.username,
-          role: user.role,
           nickname: user.nickname,
+          role: user.role,
           avatar: user.avatar,
         },
       };

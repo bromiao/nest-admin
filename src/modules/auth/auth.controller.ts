@@ -1,6 +1,6 @@
 import { Body, Controller, Post, UseFilters } from '@nestjs/common';
 import { Public } from './public.decorator';
-import { AuthService } from './auth.service';
+import { AuthAdapterService } from './auth-adapter.service';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
@@ -13,7 +13,7 @@ import { LoggerService } from '../logger/logger.service';
 @LogContext('AuthController') // 设置日志上下文
 export class AuthController {
   constructor(
-    private authService: AuthService,
+    private authAdapterService: AuthAdapterService,
     private readonly logger: LoggerService,
   ) {
     this.logger.setContext('AuthController');
@@ -38,7 +38,7 @@ export class AuthController {
     this.logger.debug(`Login attempt for user: ${params.username}`);
 
     try {
-      const result = await this.authService.login(
+      const result = await this.authAdapterService.login(
         params.username,
         params.password,
       );

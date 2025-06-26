@@ -2,10 +2,12 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import { createLoggerConfig, loggerConfig } from './logger.config';
 import { LoggerOptions } from './logger.constants';
+import { LoggerService } from './logger.service';
 
 @Module({
   imports: [WinstonModule.forRoot(loggerConfig)],
-  exports: [WinstonModule],
+  providers: [LoggerService],
+  exports: [WinstonModule, LoggerService],
 })
 export class LoggerModule {
   /**
@@ -17,7 +19,8 @@ export class LoggerModule {
     return {
       module: LoggerModule,
       imports: [WinstonModule.forRoot(createLoggerConfig(options))],
-      exports: [WinstonModule],
+      providers: [LoggerService],
+      exports: [WinstonModule, LoggerService],
     };
   }
 }

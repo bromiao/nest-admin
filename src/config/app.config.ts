@@ -25,12 +25,8 @@ export default registerAs('app', () => {
     config = { ...config, ...envConfig };
   }
 
-  console.log('手动加载的Redis配置:', {
-    REDIS_ENABLED: config['REDIS_ENABLED'],
-    REDIS_HOST: config['REDIS_HOST'],
-    REDIS_PORT: config['REDIS_PORT'],
-    REDIS_DB: config['REDIS_DB'],
-  });
+  console.log('当前环境:', process.env.NODE_ENV || 'development');
+  console.log('环境配置:', config);
 
   return config;
 });

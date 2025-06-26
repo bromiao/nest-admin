@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { TestConsoleController } from './test-console.controller';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BookModule } from './modules/book/book.module';
@@ -69,7 +70,7 @@ import { OrmModule } from './modules/orm/orm.module';
     ContentsModule,
     RoleModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TestConsoleController],
   providers: [
     AppService,
     LoggerService,

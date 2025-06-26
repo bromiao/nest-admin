@@ -9,7 +9,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { RoleService } from './role.service';
+import { RoleAdapterService } from './role-adapter.service';
 import { CacheService } from '../cache/cache.service';
 import { wrapperResponse } from 'src/utils';
 import {
@@ -27,7 +27,7 @@ import {
 @Controller('role')
 export class RoleController {
   constructor(
-    private readonly roleService: RoleService,
+    private readonly roleAdapterService: RoleAdapterService,
     private readonly cacheService: CacheService,
   ) {}
 
@@ -50,7 +50,7 @@ export class RoleController {
   @ApiResponse({ status: 200, description: '删除角色和菜单绑定关系成功' })
   removeRoleMenu(@Body() body) {
     return wrapperResponse(
-      this.roleService.removeRoleMenu(body.roleId),
+      this.roleAdapterService.removeRoleMenu(body.roleId),
       '删除角色和菜单绑定关系成功',
     );
   }
@@ -64,7 +64,7 @@ export class RoleController {
   @ApiResponse({ status: 200, description: '删除角色和权限绑定关系成功' })
   removeRoleAuth(@Body() body) {
     return wrapperResponse(
-      this.roleService.removeRoleAuth(body),
+      this.roleAdapterService.removeRoleAuth(body),
       '删除角色和权限绑定关系成功',
     );
   }
@@ -88,7 +88,7 @@ export class RoleController {
   @ApiResponse({ status: 200, description: '删除权限成功' })
   removeAuth(@Body() body) {
     return wrapperResponse(
-      this.roleService.removeAuth(body.id),
+      this.roleAdapterService.removeAuth(body.id),
       '删除权限成功',
     );
   }
@@ -114,7 +114,7 @@ export class RoleController {
       }
 
       // 从数据库获取并缓存
-      const authList = await this.roleService.getAuthList(query);
+      const authList = await this.roleAdapterService.getAuthList(query);
       await this.cacheService.set(cacheKey, authList, 600); // 缓存10分钟
 
       return {
@@ -139,7 +139,10 @@ export class RoleController {
   @ApiBody({ description: '权限信息' })
   @ApiResponse({ status: 201, description: '新增权限成功' })
   createAuth(@Body() body) {
-    return wrapperResponse(this.roleService.createAuth(body), '新增权限成功');
+    return wrapperResponse(
+      this.roleAdapterService.createAuth(body),
+      '新增权限成功',
+    );
   }
 
   @Put('auth')
@@ -150,7 +153,10 @@ export class RoleController {
   @ApiBody({ description: '权限信息' })
   @ApiResponse({ status: 200, description: '更新权限成功' })
   updateAuth(@Body() body) {
-    return wrapperResponse(this.roleService.updateAuth(body), '更新权限成功');
+    return wrapperResponse(
+      this.roleAdapterService.updateAuth(body),
+      '更新权限成功',
+    );
   }
 
   @Get()
@@ -174,7 +180,7 @@ export class RoleController {
       }
 
       // 从数据库获取并缓存
-      const roles = await this.roleService.findAll();
+      const roles = await this.roleAdapterService.findAll();
       await this.cacheService.set(cacheKey, roles, 300); // 缓存5分钟
 
       return {
@@ -199,7 +205,10 @@ export class RoleController {
   @ApiBody({ description: '角色信息' })
   @ApiResponse({ status: 201, description: '创建角色成功' })
   create(@Body() body) {
-    return wrapperResponse(this.roleService.create(body), '创建角色成功');
+    return wrapperResponse(
+      this.roleAdapterService.create(body),
+      '创建角色成功',
+    );
   }
 
   @Put()
@@ -210,7 +219,10 @@ export class RoleController {
   @ApiBody({ description: '角色信息' })
   @ApiResponse({ status: 200, description: '更新角色成功' })
   update(@Body() body) {
-    return wrapperResponse(this.roleService.update(body), '更新角色成功');
+    return wrapperResponse(
+      this.roleAdapterService.update(body),
+      '更新角色成功',
+    );
   }
 
   @Post('role_menu')
@@ -222,7 +234,7 @@ export class RoleController {
   @ApiResponse({ status: 201, description: '新增角色和菜单绑定关系成功' })
   createRoleMenu(@Body() body) {
     return wrapperResponse(
-      this.roleService.createRoleMenu(body),
+      this.roleAdapterService.createRoleMenu(body),
       '新增角色和菜单绑定关系成功',
     );
   }
@@ -235,8 +247,9 @@ export class RoleController {
   @ApiQuery({ name: 'roleId', description: '角色ID', type: Number })
   @ApiResponse({ status: 200, description: '获取角色和菜单绑定关系成功' })
   getRoleMenu(@Query('roleId') roleId: number | string) {
+    const id = typeof roleId === 'string' ? parseInt(roleId, 10) : roleId;
     return wrapperResponse(
-      this.roleService.getRoleMenu(roleId),
+      this.roleAdapterService.getRoleMenu(id),
       '获取角色和菜单绑定关系成功',
     );
   }
@@ -250,7 +263,7 @@ export class RoleController {
   @ApiResponse({ status: 201, description: '新增角色和权限绑定关系成功' })
   createRoleAuth(@Body() body) {
     return wrapperResponse(
-      this.roleService.createRoleAuth(body),
+      this.roleAdapterService.createRoleAuth(body),
       '新增角色和权限绑定关系成功',
     );
   }
@@ -263,8 +276,9 @@ export class RoleController {
   @ApiQuery({ name: 'roleId', description: '角色ID', type: Number })
   @ApiResponse({ status: 200, description: '获取角色和权限绑定关系成功' })
   getRoleAuth(@Query('roleId') roleId: number | string) {
+    const id = typeof roleId === 'string' ? parseInt(roleId, 10) : roleId;
     return wrapperResponse(
-      this.roleService.getRoleAuth(roleId),
+      this.roleAdapterService.getRoleAuth(id),
       '获取角色和权限绑定关系成功',
     );
   }
@@ -278,7 +292,7 @@ export class RoleController {
   @ApiResponse({ status: 200, description: '获取角色和权限绑定关系成功' })
   getRoleAuthByRoleName(@Query('roleName') roleName: string) {
     return wrapperResponse(
-      this.roleService.getRoleAuthByRoleName(roleName),
+      this.roleAdapterService.getRoleAuthByRoleName(roleName),
       '获取角色和权限绑定关系成功',
     );
   }
@@ -292,6 +306,6 @@ export class RoleController {
   @ApiResponse({ status: 200, description: '获取角色成功' })
   @ApiResponse({ status: 404, description: '角色不存在' })
   getRole(@Param('id', ParseIntPipe) id: number) {
-    return this.roleService.findOne(id);
+    return this.roleAdapterService.findOne(id);
   }
 }

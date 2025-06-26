@@ -1,53 +1,210 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Contents } from './contents.entity';
 import { Repository, Like } from 'typeorm';
+import { Contents } from './contents.entity';
 
 @Injectable()
 export class ContentsService {
+  private readonly logger = new Logger(ContentsService.name);
+
   constructor(
     @InjectRepository(Contents)
     private readonly contentsRepository: Repository<Contents>,
   ) {}
 
-  getContentsList(params: any = {}) {
-    let page = +params.page || 1;
-    let pageSize = +params.pageSize || 20;
-    const { title = '', author = '' } = params;
-    if (page < 1) {
-      page = 1;
-    }
-    if (pageSize < 1) {
-      pageSize = 20;
-    }
-    let where = 'WHERE 1=1';
-    if (title) {
-      where += ` AND title LIKE '%${title}%'`;
-    }
-    if (author) {
-      where += ` AND author LIKE '%${author}%'`;
-    }
-    const QUERY_BOOK_LIST_SQL = `SELECT * FROM contents ${where} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`;
-    return this.contentsRepository.query(QUERY_BOOK_LIST_SQL);
-  }
   /**
-   * 获取内容列表数量
-   * 使用Repository.count()方法，直接返回数字
+   * 创建内容
    */
-  async countContentsList(params: any = {}): Promise<number> {
-    const { title = '', author = '' } = params;
+  async create(contentsData: any): Promise<Contents> {
+    try {
+      const contents = this.contentsRepository.create(contentsData);
+      const savedContents = await this.contentsRepository.save(contents);
+      // 确保 savedContents 是单个对象而不是数组
+      const result = Array.isArray(savedContents)
+        ? savedContents[0]
+        : savedContents;
+      this.logger.log(`创建内容成功: ${result.fileName}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`创建内容失败: ${error.message}`);
+      throw error;
+    }
+  }
 
-    // 构建查询条件对象
+  /**
+   * 查找所有内容
+   */
+  async findAll(): Promise<Contents[]> {
+    try {
+      return await this.contentsRepository.find({
+        order: { fileName: 'ASC' },
+      });
+    } catch (error) {
+      this.logger.error(`查询所有内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 根据ID查找内容
+   */
+  async findOne(id: any): Promise<Contents> {
+    try {
+      const contents = await this.contentsRepository.findOne({ where: { id } });
+      if (!contents) {
+        throw new Error(`内容 ID ${id} 不存在`);
+      }
+      return contents;
+    } catch (error) {
+      this.logger.error(`查询内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新内容
+   */
+  async update(id: any, updateData: any): Promise<Contents> {
+    try {
+      await this.contentsRepository.update(id, updateData);
+      const updatedContents = await this.findOne(id);
+      this.logger.log(`更新内容成功: ${updatedContents.fileName}`);
+      return updatedContents;
+    } catch (error) {
+      this.logger.error(`更新内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除内容
+   */
+  async remove(id: any): Promise<void> {
+    try {
+      await this.contentsRepository.delete(id);
+      this.logger.log(`删除内容成功: ID ${id}`);
+    } catch (error) {
+      this.logger.error(`删除内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取内容总数
+   */
+  async count(): Promise<number> {
+    try {
+      return await this.contentsRepository.count();
+    } catch (error) {
+      this.logger.error(`获取内容总数失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 分页查询内容
+   */
+  async findWithPagination(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Contents[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      const skip = (page - 1) * limit;
+      const [data, total] = await Promise.all([
+        this.contentsRepository.find({
+          skip,
+          take: limit,
+          order: { fileName: 'ASC' },
+        }),
+        this.contentsRepository.count(),
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      this.logger.error(`分页查询内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 搜索内容
+   */
+  async search(keyword: string): Promise<Contents[]> {
+    try {
+      return await this.contentsRepository
+        .createQueryBuilder('contents')
+        .where('contents.fileName LIKE :keyword', { keyword: `%${keyword}%` })
+        .orWhere('contents.text LIKE :keyword', { keyword: `%${keyword}%` })
+        .orWhere('contents.label LIKE :keyword', { keyword: `%${keyword}%` })
+        .orderBy('contents.fileName', 'ASC')
+        .getMany();
+    } catch (error) {
+      this.logger.error(`搜索内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 批量删除内容
+   */
+  async removeMany(ids: any[]): Promise<void> {
+    try {
+      await this.contentsRepository.delete(ids);
+      this.logger.log(`批量删除内容成功: ${ids.join(', ')}`);
+    } catch (error) {
+      this.logger.error(`批量删除内容失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // 兼容现有接口的方法
+
+  /**
+   * 获取内容列表
+   */
+  async getContentsList(params: any): Promise<Contents[]> {
     const whereConditions: any = {};
 
-    // 添加标题筛选
-    if (title) {
-      whereConditions.title = Like(`%${title}%`);
+    if (params.fileName) {
+      whereConditions.fileName = Like(`%${params.fileName}%`);
     }
 
-    // 添加作者筛选
-    if (author) {
-      whereConditions.author = Like(`%${author}%`);
+    if (params.author) {
+      whereConditions.label = Like(`%${params.author}%`);
+    }
+
+    // 根据是否有查询条件决定查询方式
+    if (Object.keys(whereConditions).length > 0) {
+      return await this.contentsRepository.find({ where: whereConditions });
+    } else {
+      return await this.contentsRepository.find(); // 不传where参数
+    }
+  }
+
+  /**
+   * 统计内容数量
+   */
+  async countContentsList(params: any): Promise<number> {
+    const whereConditions: any = {};
+
+    if (params.fileName) {
+      whereConditions.fileName = Like(`%${params.fileName}%`);
+    }
+
+    if (params.author) {
+      whereConditions.label = Like(`%${params.author}%`);
     }
 
     // 根据是否有查询条件决定查询方式
@@ -58,36 +215,30 @@ export class ContentsService {
     }
   }
 
-  addContents(params) {
-    const { fileName, id, href, order, level, text, label, pid, navId } =
-      params;
-    const INSERT_SQL = `INSERT INTO contents(
-      fileName, 
-      id,
-      href,
-      \`order\`,
-      level,
-      text,
-      label,
-      pid,
-      navId
-    ) VALUES(
-      '${fileName}', 
-      "${id}", 
-      "${href}", 
-      "${order}", 
-      "${level}", 
-      "${text}", 
-      "${label}", 
-      "${pid}", 
-      "${navId}"
-     )`;
+  /**
+   * 添加内容
+   */
+  async addContents(params: any): Promise<Contents> {
+    const INSERT_SQL = `INSERT INTO contents (fileName, id, href, \`order\`, level, text, label, pid, navId) VALUES ('${params.fileName}', '${params.id}', '${params.href}', ${params.order}, ${params.level}, '${params.text}', '${params.label}', '${params.pid}', '${params.navId}')`;
 
-    return this.contentsRepository.query(INSERT_SQL);
+    await this.contentsRepository.query(INSERT_SQL);
+
+    // 返回创建的内容
+    const result = await this.contentsRepository.findOne({
+      where: {
+        fileName: params.fileName,
+        navId: params.navId,
+      },
+    });
+
+    return result || ({} as Contents);
   }
 
-  async deleteContents(fileName) {
+  /**
+   * 删除内容
+   */
+  async deleteContents(fileName: string): Promise<void> {
     const DELETE_SQL = `DELETE FROM contents WHERE fileName="${fileName}"`;
-    return this.contentsRepository.query(DELETE_SQL);
+    await this.contentsRepository.query(DELETE_SQL);
   }
 }

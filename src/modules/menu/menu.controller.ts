@@ -8,7 +8,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { MenuService } from './menu.service';
+import { MenuAdapterService } from './menu-adapter.service';
 import { CacheService } from '../cache/cache.service';
 import {
   ApiTags,
@@ -24,7 +24,7 @@ import {
 @Controller('menu')
 export class MenuController {
   constructor(
-    private readonly menuService: MenuService,
+    private readonly menuAdapterService: MenuAdapterService,
     private readonly cacheService: CacheService,
   ) {}
 
@@ -49,7 +49,7 @@ export class MenuController {
       }
 
       // 从数据库获取并缓存
-      const menus = await this.menuService.findActive();
+      const menus = await this.menuAdapterService.findActive();
       await this.cacheService.set(cacheKey, menus, 600); // 缓存10分钟
 
       return {
@@ -89,7 +89,7 @@ export class MenuController {
       }
 
       // 从数据库获取并缓存 - 使用原生查询
-      const menu = await this.menuService.findById(id);
+      const menu = await this.menuAdapterService.findById(id);
       if (!menu) {
         return {
           code: -1,
@@ -135,7 +135,7 @@ export class MenuController {
       }
 
       // 从数据库获取并缓存
-      const menus = await this.menuService.findAll();
+      const menus = await this.menuAdapterService.findAll();
       await this.cacheService.set(cacheKey, menus, 300); // 缓存5分钟
 
       return {
@@ -159,7 +159,7 @@ export class MenuController {
   @ApiResponse({ status: 400, description: '请求参数错误' })
   async create(@Body() body) {
     try {
-      const menu = await this.menuService.create(body.data || body);
+      const menu = await this.menuAdapterService.create(body.data || body);
 
       // 清除相关缓存
       await this.clearMenuCaches();
@@ -185,7 +185,7 @@ export class MenuController {
   @ApiResponse({ status: 404, description: '菜单不存在' })
   async update(@Body() body) {
     try {
-      const result = await this.menuService.update(body.data || body);
+      const result = await this.menuAdapterService.update(body.data || body);
 
       // 清除相关缓存
       await this.clearMenuCaches();
@@ -215,7 +215,7 @@ export class MenuController {
   @ApiResponse({ status: 404, description: '菜单不存在' })
   async remove(@Param('id', ParseIntPipe) id: number) {
     try {
-      await this.menuService.deleteById(id);
+      await this.menuAdapterService.deleteById(id);
 
       // 清除相关缓存
       await this.clearMenuCaches();
