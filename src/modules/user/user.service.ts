@@ -244,6 +244,78 @@ export class UserService {
   }
 
   /**
+   * 获取用户总数
+   */
+  @Cacheable({ key: 'users:count', ttl: 300 })
+  async count(): Promise<number> {
+    try {
+      return await this.userRepository.count();
+    } catch (error) {
+      this.logger.error(`获取用户总数失败: ${error.message}`, error.stack);
+      throw new BadRequestException('获取用户总数失败');
+    }
+  }
+
+  /**
+   * 分页查询用户
+   */
+  async findWithPagination(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: User[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      const skip = (page - 1) * limit;
+
+      const [data, total] = await Promise.all([
+        this.userRepository.find({
+          skip,
+          take: limit,
+          order: { id: 'DESC' },
+        }),
+        this.userRepository.count(),
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      this.logger.error(`分页查询用户失败: ${error.message}`, error.stack);
+      throw new BadRequestException('分页查询用户失败');
+    }
+  }
+
+  /**
+   * 激活/停用用户
+   */
+  @CacheEvict(['user:${0}', 'users:list:*', 'users:stats'])
+  async toggleActive(id: number): Promise<User> {
+    try {
+      const user = await this.findOne(id);
+
+      const newActiveStatus = user.active === 1 ? 0 : 1;
+      await this.userRepository.update(id, { active: newActiveStatus });
+
+      const updatedUser = await this.findOne(id);
+      this.logger.log(`用户 ${id} 激活状态切换为 ${newActiveStatus}`);
+
+      return updatedUser;
+    } catch (error) {
+      this.logger.error(`切换用户激活状态失败: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
    * 批量获取用户信息
    * @param ids 用户ID数组
    * @returns 用户列表

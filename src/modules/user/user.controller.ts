@@ -11,6 +11,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { UserAdapterService } from './user-adapter.service';
 import { CreateUserDto } from './crate-user.dto';
 import { wrapperResponse } from 'src/utils';
 import {
@@ -31,8 +32,25 @@ import { CacheService } from '../cache/cache.service';
 export class UserController {
   constructor(
     private readonly userService: UserService,
+    private readonly userAdapterService: UserAdapterService,
     private readonly cacheService: CacheService,
   ) {}
+
+  @Get('orm-info')
+  @ApiOperation({
+    summary: '获取当前ORM信息',
+    description: '返回当前使用的ORM类型信息',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'ORM信息获取成功',
+  })
+  getOrmInfo() {
+    return wrapperResponse(
+      this.userAdapterService.getOrmInfo(),
+      'ORM信息获取成功',
+    );
+  }
 
   @Get('info')
   @ApiOperation({

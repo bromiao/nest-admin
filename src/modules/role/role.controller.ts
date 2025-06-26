@@ -174,7 +174,7 @@ export class RoleController {
       }
 
       // 从数据库获取并缓存
-      const roles = await this.roleService.findAll(query);
+      const roles = await this.roleService.findAll();
       await this.cacheService.set(cacheKey, roles, 300); // 缓存5分钟
 
       return {

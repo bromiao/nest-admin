@@ -1,4 +1,4 @@
-import { Injectable, Delete } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from './role.entity';
 import { DeleteResult, Repository } from 'typeorm';
@@ -14,7 +14,7 @@ export class RoleService {
     return Role ?? ({} as Role);
   }
 
-  findAll(query): Promise<Role[]> {
+  findAll(): Promise<Role[]> {
     const QUERY_ALl_ROLE_SQL = `SELECT id, name, remark FROM role`;
     return this.roleRepository.query(QUERY_ALl_ROLE_SQL);
   }

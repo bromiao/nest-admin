@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { BookService } from './book.service';
+import { BookAdapterService } from './book-adapter.service';
 import { CacheService } from '../cache/cache.service';
 import { wrapperResponse } from 'src/utils';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -37,8 +38,25 @@ import {
 export class BookController {
   constructor(
     private readonly bookService: BookService,
+    private readonly bookAdapterService: BookAdapterService,
     private readonly cacheService: CacheService,
   ) {}
+
+  @Get('orm-info')
+  @ApiOperation({
+    summary: '获取当前ORM信息',
+    description: '返回当前使用的ORM类型信息',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'ORM信息获取成功',
+  })
+  getOrmInfo() {
+    return wrapperResponse(
+      this.bookAdapterService.getOrmInfo(),
+      'ORM信息获取成功',
+    );
+  }
 
   @Get()
   @ApiOperation({

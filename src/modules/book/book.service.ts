@@ -195,4 +195,136 @@ export class BookService {
     const DELETE_SQL = `DELETE FROM book WHERE id=${id}`;
     return this.bookRepository.query(DELETE_SQL);
   }
+
+  // 以下方法为适配器模式新增的标准化方法
+
+  /**
+   * 创建书籍 - 标准化方法
+   */
+  async create(bookData: Partial<Book>): Promise<Book> {
+    const book = this.bookRepository.create({
+      ...bookData,
+      createDatetime: Date.now(),
+      updateDatetime: Date.now(),
+    });
+    return await this.bookRepository.save(book);
+  }
+
+  /**
+   * 查找所有书籍 - 标准化方法
+   */
+  async findAll(): Promise<Book[]> {
+    return await this.bookRepository.find({
+      order: { id: 'DESC' },
+    });
+  }
+
+  /**
+   * 根据ID查找书籍 - 标准化方法
+   */
+  async findOne(id: number): Promise<Book> {
+    const book = await this.bookRepository.findOne({ where: { id } });
+    if (!book) {
+      throw new Error(`书籍ID ${id} 不存在`);
+    }
+    return book;
+  }
+
+  /**
+   * 根据文件名查找书籍 - 标准化方法
+   */
+  async findByFileName(fileName: string): Promise<Book | null> {
+    return await this.bookRepository.findOne({ where: { fileName } });
+  }
+
+  /**
+   * 更新书籍 - 标准化方法
+   */
+  async update(id: number, updateData: Partial<Book>): Promise<Book> {
+    await this.findOne(id); // 检查是否存在
+    await this.bookRepository.update(id, {
+      ...updateData,
+      updateDatetime: Date.now(),
+    });
+    return await this.findOne(id);
+  }
+
+  /**
+   * 删除书籍 - 标准化方法
+   */
+  async remove(id: number): Promise<void> {
+    await this.findOne(id); // 检查是否存在
+    await this.bookRepository.delete(id);
+  }
+
+  /**
+   * 获取书籍总数 - 标准化方法
+   */
+  async count(): Promise<number> {
+    return await this.bookRepository.count();
+  }
+
+  /**
+   * 分页查询书籍 - 标准化方法
+   */
+  async findWithPagination(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Book[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.bookRepository.find({
+        skip,
+        take: limit,
+        order: { id: 'DESC' },
+      }),
+      this.bookRepository.count(),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * 根据分类查找书籍 - 标准化方法
+   */
+  async findByCategory(category: number): Promise<Book[]> {
+    return await this.bookRepository.find({
+      where: { category },
+      order: { id: 'DESC' },
+    });
+  }
+
+  /**
+   * 搜索书籍 - 标准化方法
+   */
+  async search(keyword: string): Promise<Book[]> {
+    return await this.bookRepository.find({
+      where: [
+        { title: Like(`%${keyword}%`) },
+        { author: Like(`%${keyword}%`) },
+        { publisher: Like(`%${keyword}%`) },
+      ],
+      order: { id: 'DESC' },
+    });
+  }
+
+  /**
+   * 批量删除书籍 - 标准化方法
+   */
+  async removeMany(ids: number[]): Promise<void> {
+    await this.bookRepository.delete(ids);
+  }
 }

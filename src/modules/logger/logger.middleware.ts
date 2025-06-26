@@ -26,7 +26,7 @@ export class LoggerMiddleware implements NestMiddleware {
     // 响应完成时的处理
     res.on('finish', () => {
       const { statusCode } = res;
-      const contentLength = res.get('content-length') || 0;
+      // const contentLength = res.get('content-length') || 0; // 暂时不使用
       const responseTime = Date.now() - startTime;
 
       // 使用新的logHttpRequest方法记录HTTP请求

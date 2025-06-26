@@ -27,13 +27,19 @@ export function getRedisConfig(configService?: ConfigService): RedisConfig {
   // 如果没有提供configService，则直接从环境变量读取
   const getEnvValue = (key: string, defaultValue: string): string => {
     if (configService) {
+      // 先尝试从自定义配置中获取
+      const appConfig = configService.get('app');
+      if (appConfig && appConfig[key]) {
+        return appConfig[key];
+      }
+      // 如果自定义配置中没有，则从标准配置中获取
       return configService.get<string>(key) || defaultValue;
     }
     return process.env[key] || defaultValue;
   };
 
   const config: RedisConfig = {
-    enabled: getEnvValue('REDIS_ENABLED', 'true') === 'true',
+    enabled: getEnvValue('REDIS_ENABLED', 'false') === 'true',
     host: getEnvValue('REDIS_HOST', 'localhost'),
     port: parseInt(getEnvValue('REDIS_PORT', '6379'), 10),
     password: getEnvValue('REDIS_PASSWORD', 'example'),

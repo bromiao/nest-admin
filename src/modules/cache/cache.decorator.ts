@@ -47,7 +47,7 @@ export const Cacheable = (config: CacheConfig | string) => {
       const cacheService = this.cacheService;
       if (!cacheService) {
         console.warn('缓存服务未注入，无法使用缓存装饰器');
-        return originalMethod.apply(this, args);
+        return await originalMethod.apply(this, args);
       }
 
       // 生成缓存键
@@ -241,7 +241,7 @@ export function CacheableMethod(keyPrefix: string, ttl?: number) {
       const cacheService = this.cacheService;
       if (!cacheService) {
         console.warn('缓存服务未注入，无法使用缓存装饰器');
-        return originalMethod.apply(this, args);
+        return await originalMethod.apply(this, args);
       }
 
       // 生成缓存键

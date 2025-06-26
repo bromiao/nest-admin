@@ -60,8 +60,8 @@ const customColors = {
 // 添加自定义颜色
 winston.addColors(customColors);
 
-// 日志格式
-const logFormat = winston.format.combine(
+// 日志格式 - 用于控制台输出
+const consoleLogFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.ms(),
   nestWinstonModuleUtilities.format.nestLike('NestAdmin', {
@@ -78,7 +78,7 @@ const consoleFormat = winston.format.combine(
   winston.format.printf((info) => {
     // 使用chalk.hex('#FFA500')将上下文设置为橙黄色
     const context = info.context || 'Application';
-    const coloredContext = chalk.hex('#FFA500').bold(`[${context}]`);
+    const coloredContext = chalk.hex('#FFA500').bold(`[${String(context)}]`);
 
     // 处理消息中的对象
     const message = chalk.cyan(info.message);
@@ -93,7 +93,7 @@ const consoleFormat = winston.format.combine(
 
     // 检查是否有responseTime字段
     if (info.responseTime) {
-      metaOutput += `\n${chalk.blueBright('Response Time:')} ${chalk.cyan(info.responseTime + 'ms')}`;
+      metaOutput += `\n${chalk.blueBright('Response Time:')} ${chalk.cyan(String(info.responseTime) + 'ms')}`;
     }
 
     // 如果有其他元数据字段，也添加到输出中

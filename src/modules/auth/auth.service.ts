@@ -1,4 +1,5 @@
 import { UserService } from './../user/user.service';
+import { UserAdapterService } from '../user/user-adapter.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as md5 from 'md5';
@@ -12,6 +13,7 @@ import { LoggerService } from '../logger/logger.service';
 export class AuthService {
   constructor(
     private userService: UserService,
+    private userAdapterService: UserAdapterService,
     private jwtService: JwtService,
     private readonly logger: LoggerService,
   ) {
@@ -26,8 +28,13 @@ export class AuthService {
    */
   async login(username: string, password: string) {
     try {
-      // 查找用户
-      const user = await this.userService.findByUsername(username);
+      // 使用适配器查找用户
+      const user = await this.userAdapterService.findByUsername(username);
+
+      if (!user) {
+        this.logger.warn(`User not found: ${username}`);
+        throw new UnauthorizedException('Invalid username or password');
+      }
 
       // 密码加密比对
       const md5Pwd = md5(password).toUpperCase();

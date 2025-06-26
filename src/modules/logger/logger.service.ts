@@ -34,7 +34,7 @@ export class LoggerService implements NestLoggerService {
     if (typeof obj === 'object' && obj !== null) {
       try {
         return JSON.stringify(obj, null, 2);
-      } catch (e) {
+      } catch {
         return '[Object]';
       }
     }

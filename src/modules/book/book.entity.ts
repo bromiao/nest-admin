@@ -51,10 +51,10 @@ export class Book {
   createUser: string;
 
   @Column({ nullable: true, type: 'bigint' })
-  createDt: number;
+  createDatetime: number;
 
   @Column({ nullable: true, type: 'bigint' })
-  updateDt: number;
+  updateDatetime: number;
 
   @Column({ type: 'tinyint', width: 1, unsigned: true, default: 0 })
   updateType: number;

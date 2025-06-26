@@ -18,6 +18,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LogLevel } from './modules/logger/logger.constants';
 import { CacheModule } from './modules/cache/cache.module';
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './modules/prisma/prisma.module';
+import { OrmModule } from './modules/orm/orm.module';
 
 /**
  * 应用程序主模块
@@ -28,8 +30,16 @@ import { ConfigModule } from '@nestjs/config';
     // 配置模块
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: ['.env', `.env.${process.env.NODE_ENV || 'development'}`],
+      expandVariables: true,
+      load: [require('./config/app.config').default],
     }),
+
+    // ORM模块 - 全局模块，提供ORM工厂服务
+    OrmModule,
+
+    // Prisma模块 - 全局模块，提供Prisma服务
+    PrismaModule,
 
     // 日志模块 - 使用自定义配置
     LoggerModule.forRoot({

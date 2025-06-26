@@ -13,6 +13,9 @@ export enum ConfigEnum {
   REDIS_PORT = 'REDIS_PORT',
   REDIS_PASSWORD = 'REDIS_PASSWORD',
   REDIS_RECONNECT = 'REDIS_RECONNECT',
+
+  // ORM配置
+  ORM_TYPE = 'ORM_TYPE',
 }
 
 export enum LogEnum {

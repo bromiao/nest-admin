@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DB_URL")
+}
+
+model AdminUser {
+  avatar   String @db.VarChar(255)
+  id       Int    @id @default(autoincrement())
+  username String @unique(map: "IDX_4d0392574f49340bb75a102b04") @db.VarChar(255)
+  password String @db.VarChar(255)
+  role     String @db.VarChar(255)
+  nickname String @db.VarChar(255)
+  active   Int    @default(1)
+
+  @@map("admin_user")
+}
+
+model Book {
+  id             Int     @id @default(autoincrement())
+  fileName       String  @db.VarChar(255)
+  cover          String? @db.VarChar(1024)
+  title          String  @db.VarChar(1024)
+  author         String? @db.VarChar(1024)
+  publisher      String? @db.VarChar(255)
+  bookId         String? @db.VarChar(255)
+  category       Int?
+  categoryText   String? @db.VarChar(255)
+  language       String? @db.VarChar(10)
+  rootFile       String? @db.VarChar(255)
+  originalName   String? @db.VarChar(255)
+  filePath       String? @db.VarChar(255)
+  unzipPath      String? @db.VarChar(255)
+  coverPath      String? @db.VarChar(255)
+  createUser     String? @db.VarChar(50)
+  updateType     Int     @default(0) @db.UnsignedTinyInt
+  createDatetime BigInt?
+  updateDatetime BigInt?
+
+  @@map("book")
+}
+
+model Menu {
+  id       Int    @id @default(autoincrement())
+  path     String @db.VarChar(255)
+  name     String @db.VarChar(255)
+  redirect String @default("") @db.VarChar(255)
+  meta     String @db.VarChar(255)
+  pid      Int
+  active   Int    @default(1)
+
+  @@unique([name, path], map: "IDX_fe3d90e414837d7fd66553847a")
+  @@map("menu")
+}
+
+model Role {
+  id     Int    @id @default(autoincrement())
+  name   String @unique(map: "IDX_ae4578dcaed5adff96595e6166") @db.VarChar(255)
+  remark String @db.VarChar(255)
+
+  @@map("role")
+}
+
+model Contents {
+  fileName String  @db.VarChar(100)
+  id       String  @db.VarChar(100)
+  href     String? @db.VarChar(255)
+  order    Int?
+  level    Int?
+  text     String? @db.VarChar(500)
+  label    String? @db.VarChar(255)
+  pid      String? @db.VarChar(255)
+  navId    String  @db.VarChar(100)
+
+  @@id([fileName, navId])
+  @@map("contents")
+}
+
+model auth {
+  id     Int     @id @default(autoincrement())
+  key    String  @unique(map: "key") @db.VarChar(50)
+  name   String  @db.VarChar(100)
+  remark String? @db.VarChar(255)
+}
+
+model role_auth {
+  roleId Int
+  authId Int
+
+  @@id([roleId, authId])
+}
+
+model role_menu {
+  roleId Int
+  menuId Int
+
+  @@id([roleId, menuId])
+}
