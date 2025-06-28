@@ -29,8 +29,8 @@ export class ContentsAdapterService {
         fileName: contentsData.fileName || '',
         id: contentsData.id || '',
         href: contentsData.href,
-        order: contentsData.order,
-        level: contentsData.level,
+        order: this.convertToInt(contentsData.order),
+        level: this.convertToInt(contentsData.level),
         text: contentsData.text,
         label: contentsData.label,
         pid: contentsData.pid,
@@ -75,12 +75,21 @@ export class ContentsAdapterService {
    */
   async update(id: any, updateData: any): Promise<Contents | PrismaContents> {
     if (this.ormFactory.isPrisma()) {
+      // 转换数据类型以适配Prisma
+      const prismaUpdateData = { ...updateData };
+      if (prismaUpdateData.order !== undefined) {
+        prismaUpdateData.order = this.convertToInt(prismaUpdateData.order);
+      }
+      if (prismaUpdateData.level !== undefined) {
+        prismaUpdateData.level = this.convertToInt(prismaUpdateData.level);
+      }
+
       // Prisma 使用复合主键
       if (typeof id === 'object' && id.fileName && id.navId) {
         return await this.contentsPrismaService.update(
           id.fileName,
           id.navId,
-          updateData,
+          prismaUpdateData,
         );
       }
       const parts = String(id).split(':');
@@ -88,7 +97,7 @@ export class ContentsAdapterService {
         return await this.contentsPrismaService.update(
           parts[0],
           parts[1],
-          updateData,
+          prismaUpdateData,
         );
       }
       throw new Error('Prisma Contents requires fileName and navId');
@@ -211,5 +220,16 @@ export class ContentsAdapterService {
    */
   getOrmInfo() {
     return this.ormFactory.getOrmInfo();
+  }
+
+  /**
+   * 将字符串或数字转换为整数，处理null和undefined
+   */
+  private convertToInt(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const num = parseInt(String(value), 10);
+    return isNaN(num) ? null : num;
   }
 }

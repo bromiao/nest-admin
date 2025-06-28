@@ -30,8 +30,8 @@ export class MenuAdapterService {
         name: menuData.name || '',
         redirect: menuData.redirect || '',
         meta: menuData.meta || '',
-        pid: menuData.pid || menuData.parentId || 0,
-        active: menuData.active || menuData.status || 1,
+        pid: this.convertToInt(menuData.pid || menuData.parentId) || 0,
+        active: this.convertToInt(menuData.active || menuData.status) || 1,
       };
       return await this.menuPrismaService.create(prismaData);
     }
@@ -107,10 +107,13 @@ export class MenuAdapterService {
       if (data.name !== undefined) prismaData.name = data.name;
       if (data.redirect !== undefined) prismaData.redirect = data.redirect;
       if (data.meta !== undefined) prismaData.meta = data.meta;
-      if (data.pid !== undefined) prismaData.pid = data.pid;
-      if (data.parentId !== undefined) prismaData.pid = data.parentId;
-      if (data.active !== undefined) prismaData.active = data.active;
-      if (data.status !== undefined) prismaData.active = data.status;
+      if (data.pid !== undefined) prismaData.pid = this.convertToInt(data.pid);
+      if (data.parentId !== undefined)
+        prismaData.pid = this.convertToInt(data.parentId);
+      if (data.active !== undefined)
+        prismaData.active = this.convertToInt(data.active);
+      if (data.status !== undefined)
+        prismaData.active = this.convertToInt(data.status);
 
       return await this.menuPrismaService.update(menuId, prismaData);
     }
@@ -198,5 +201,16 @@ export class MenuAdapterService {
    */
   getOrmInfo() {
     return this.ormFactory.getOrmInfo();
+  }
+
+  /**
+   * 将字符串或数字转换为整数，处理null和undefined
+   */
+  private convertToInt(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const num = parseInt(String(value), 10);
+    return isNaN(num) ? null : num;
   }
 }

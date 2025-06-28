@@ -4,8 +4,11 @@ import { Book } from './book.entity';
 import { Repository, Like, In } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { EpubBook } from './epub-book';
+import { NGINX_PATH } from 'src/constants/auth.constants';
 
+const homeDir = os.homedir();
 const AUTH_LIST = ['BusinessandManagement'];
 
 @Injectable()
@@ -35,6 +38,7 @@ export class BookService {
          )
      `;
     const authList = await this.bookRepository.query(AUTH_SQL);
+    console.log(2222, authList);
     let categoryAuth = authList.filter((auth) => AUTH_LIST.includes(auth.key));
 
     // 对于Repository方法，返回不带引号的字符串数组
@@ -69,6 +73,7 @@ export class BookService {
       where += ` AND author LIKE '%${author}%'`;
     }
     const categoryAuth = await this.getCategoryAuthForSQL(userid);
+    console.log(1111, categoryAuth);
     if (categoryAuth.length > 0) {
       where += ` AND categoryText IN (${categoryAuth.join(',')})`;
     }
@@ -149,8 +154,8 @@ export class BookService {
   }
 
   uploadBook(file) {
-    const destDir = 'upload';
-    const destPath = path.resolve(destDir, file.originalname);
+    // const destDir = '/opt/homebrew/var/www/upload';
+    const destPath = path.resolve(homeDir, NGINX_PATH, file.originalname);
     fs.writeFileSync(destPath, file.buffer);
 
     return this.parseBook(destPath, file).then((data) => {
@@ -159,6 +164,7 @@ export class BookService {
         mimetype: file.mimetype,
         size: file.size,
         path: destPath,
+        dir: path.resolve(homeDir, NGINX_PATH),
         data,
       };
     });

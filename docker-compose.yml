@@ -48,7 +48,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - 8089:8080
 
   mongo:
     image: mongo
@@ -101,6 +101,7 @@ services:
     container_name: nginx
     ports:
       - '80:80'
+      - '8080:8080'
       - '443:443'
     volumes:
       - ~/nginx_data/conf.d:/etc/nginx/conf.d:ro

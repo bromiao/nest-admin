@@ -17,8 +17,15 @@ export class ContentsPrismaService {
    */
   async create(contentsData: Omit<Contents, never>): Promise<Contents> {
     try {
+      // 转换数据类型以适配Prisma
+      const prismaData = {
+        ...contentsData,
+        order: this.convertToInt(contentsData.order),
+        level: this.convertToInt(contentsData.level),
+      };
+
       const contents = await this.prisma.contents.create({
-        data: contentsData,
+        data: prismaData,
       });
       this.logger.log(`创建内容成功: ${contents.fileName}`);
       return contents;
@@ -91,6 +98,15 @@ export class ContentsPrismaService {
     updateData: Partial<Omit<Contents, 'fileName' | 'navId'>>,
   ): Promise<Contents> {
     try {
+      // 转换数据类型以适配Prisma
+      const prismaUpdateData = { ...updateData };
+      if (prismaUpdateData.order !== undefined) {
+        prismaUpdateData.order = this.convertToInt(prismaUpdateData.order);
+      }
+      if (prismaUpdateData.level !== undefined) {
+        prismaUpdateData.level = this.convertToInt(prismaUpdateData.level);
+      }
+
       const contents = await this.prisma.contents.update({
         where: {
           fileName_navId: {
@@ -98,7 +114,7 @@ export class ContentsPrismaService {
             navId,
           },
         },
-        data: updateData,
+        data: prismaUpdateData,
       });
       this.logger.log(`更新内容成功: ${contents.fileName}`);
       return contents;
@@ -279,7 +295,13 @@ export class ContentsPrismaService {
    * 添加内容（兼容现有接口）
    */
   async addContents(params: any): Promise<Contents> {
-    return this.create(params);
+    // 转换数据类型以适配Prisma
+    const prismaData = {
+      ...params,
+      order: this.convertToInt(params.order),
+      level: this.convertToInt(params.level),
+    };
+    return this.create(prismaData);
   }
 
   /**
@@ -287,5 +309,16 @@ export class ContentsPrismaService {
    */
   async deleteContents(fileName: string): Promise<void> {
     return this.removeByFileName(fileName);
+  }
+
+  /**
+   * 将字符串或数字转换为整数，处理null和undefined
+   */
+  private convertToInt(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const num = parseInt(String(value), 10);
+    return isNaN(num) ? null : num;
   }
 }
